@@ -43,8 +43,26 @@
 ### String Algorithms
 25. [Anagram Detection](#25-anagram-detection)
 
+### Practice Problems
+26. [Aggressive Cows — Binary Search on Answer](#26-aggressive-cows--binary-search-on-answer)
+27. [Array Reverse — Two Pointers](#27-array-reverse--two-pointers)
+28. [Trapping Rain Water — Two Pointer](#28-trapping-rain-water--two-pointer)
+29. [Trapping Rain Water — Prefix/Suffix Arrays](#29-trapping-rain-water--prefixsuffix-arrays)
+30. [Rotting Oranges — Multi-source BFS](#30-rotting-oranges--multi-source-bfs)
+31. [Knight Moves — BFS Shortest Path](#31-knight-moves--bfs-shortest-path)
+32. [Max Stack — O(1) getMax](#32-max-stack--o1-getmax)
+33. [Calendar Booking — Conflict Detection](#33-calendar-booking--conflict-detection)
+34. [Group Anagrams](#34-group-anagrams)
+35. [Stock Price — Min/Max Heap](#35-stock-price--minmax-heap)
+36. [Stock Data Structure — TreeMap](#36-stock-data-structure--treemap)
+37. [Large File Sort — External Sort (Simple)](#37-large-file-sort--external-sort-simple)
+38. [Large File Sorter — External Sort (Parallel)](#38-large-file-sorter--external-sort-parallel)
+39. [Monster Game — Simulation](#39-monster-game--simulation)
+40. [Vendor Placement — Binary Search on Answer](#40-vendor-placement--binary-search-on-answer)
+41. [Email Regex Validator](#41-email-regex-validator)
+
 ### Reference
-26. [Complexity Cheat Sheet](#quick-complexity-reference)
+42. [Complexity Cheat Sheet](#quick-complexity-reference)
 
 ---
 
@@ -893,6 +911,565 @@ public class AnagramProblem {
 
 ---
 
+## PRACTICE PROBLEMS
+
+---
+
+### 26. Aggressive Cows — Binary Search on Answer
+
+**Problem:** Given N stalls and C cows, place cows so the minimum distance between any two is maximized.  
+**Complexity:** O(n log n) time | O(1) space
+
+```java
+package com.practise;
+
+import java.util.*;
+
+public class AggressiveCow {
+
+    public static boolean canPlaceCows(int[] stalls, int cows, int minDist) {
+        int count = 1;
+        int lastPlaced = stalls[0];
+        for (int i = 1; i < stalls.length; i++) {
+            if (stalls[i] - lastPlaced >= minDist) {
+                count++;
+                lastPlaced = stalls[i];
+                if (count == cows) return true;
+            }
+        }
+        return false;
+    }
+
+    public static int aggressiveCows(int[] stalls, int cows) {
+        Arrays.sort(stalls);
+        int low = 1, high = stalls[stalls.length - 1] - stalls[0], bestDist = 0;
+
+        while (low <= high) {
+            int mid = low + (high - low) / 2;
+            if (canPlaceCows(stalls, cows, mid)) {
+                bestDist = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return bestDist;
+    }
+}
+// Input: stalls={1,2,8,4,9}, cows=3  →  Output: 3
+```
+
+---
+
+### 27. Array Reverse — Two Pointers
+
+**Complexity:** O(n) time | O(1) space
+
+```java
+package com.practise;
+
+public class ArrayReverse {
+
+    public int[] solve(int[] nums) {
+        int start = 0, end = nums.length - 1;
+        while (start < end) {
+            int temp = nums[start];
+            nums[start] = nums[end];
+            nums[end] = temp;
+            start++;
+            end--;
+        }
+        return nums;
+    }
+}
+// Input: {3,6,5,2,7,8}  →  Output: {8,7,2,5,6,3}
+```
+
+---
+
+### 28. Trapping Rain Water — Two Pointer
+
+**Complexity:** O(n) time | O(1) space
+
+```java
+package com.practise;
+
+public class TrappingRainWater {
+
+    public static int trap(int[] height) {
+        int left = 0, right = height.length - 1;
+        int leftMax = 0, rightMax = 0, water = 0;
+
+        while (left < right) {
+            if (height[left] < height[right]) {
+                if (height[left] >= leftMax) leftMax = height[left];
+                else water += leftMax - height[left];
+                left++;
+            } else {
+                if (height[right] >= rightMax) rightMax = height[right];
+                else water += rightMax - height[right];
+                right--;
+            }
+        }
+        return water;
+    }
+}
+// Input: {0,1,0,2,1,0,1,3,2,1,2,1}  →  Output: 6
+```
+
+---
+
+### 29. Trapping Rain Water — Prefix/Suffix Arrays
+
+**Complexity:** O(n) time | O(n) space
+
+```java
+package com.practise;
+
+public class TrappingRainWater2 {
+
+    public static int trap(int[] height) {
+        int n = height.length;
+        int[] leftMax = new int[n], rightMax = new int[n];
+
+        leftMax[0] = height[0];
+        for (int i = 1; i < n; i++)
+            leftMax[i] = Math.max(leftMax[i - 1], height[i]);
+
+        rightMax[n - 1] = height[n - 1];
+        for (int i = n - 2; i >= 0; i--)
+            rightMax[i] = Math.max(rightMax[i + 1], height[i]);
+
+        int water = 0;
+        for (int i = 0; i < n; i++)
+            water += Math.min(leftMax[i], rightMax[i]) - height[i];
+
+        return water;
+    }
+}
+// Input: {0,1,0,2,1,0,1,3,2,1,2,1}  →  Output: 6
+```
+
+---
+
+### 30. Rotting Oranges — Multi-source BFS
+
+**Problem:** Grid with fresh (1) and rotten (2) oranges. Each minute rotten spreads to adjacent fresh. Return minutes until all rot, or -1.  
+**Complexity:** O(rows × cols) time | O(rows × cols) space
+
+```java
+package com.practise;
+
+import java.util.*;
+
+public class RottingOranges {
+
+    public int orangesRotting(int[][] grid) {
+        int rows = grid.length, cols = grid[0].length;
+        Queue<int[]> queue = new LinkedList<>();
+        int fresh = 0;
+
+        for (int i = 0; i < rows; i++)
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == 2) queue.offer(new int[]{i, j});
+                else if (grid[i][j] == 1) fresh++;
+            }
+
+        if (fresh == 0) return 0;
+
+        int[][] directions = {{-1,0},{1,0},{0,-1},{0,1}};
+        int minutes = 0;
+
+        while (!queue.isEmpty() && fresh > 0) {
+            int size = queue.size();
+            minutes++;
+            for (int i = 0; i < size; i++) {
+                int[] cur = queue.poll();
+                for (int[] dir : directions) {
+                    int x = cur[0] + dir[0], y = cur[1] + dir[1];
+                    if (x >= 0 && x < rows && y >= 0 && y < cols && grid[x][y] == 1) {
+                        grid[x][y] = 2;
+                        queue.offer(new int[]{x, y});
+                        fresh--;
+                    }
+                }
+            }
+        }
+        return fresh == 0 ? minutes : -1;
+    }
+}
+// Input: {{2,1,1},{1,1,0},{0,1,1}}  →  Output: 4
+```
+
+---
+
+### 31. Knight Moves — BFS Shortest Path
+
+**Problem:** Find minimum moves for a knight to travel from (sx,sy) to (tx,ty) on an N×N board.  
+**Complexity:** O(N²) time | O(N²) space
+
+```java
+package com.practise;
+
+import java.util.*;
+
+class KnightMoves {
+
+    private static final int[][] MOVES = {
+        {-2,-1},{-2,1},{2,-1},{2,1},{-1,-2},{-1,2},{1,-2},{1,2}
+    };
+
+    public static int minKnightMoves(int N, int sx, int sy, int tx, int ty) {
+        boolean[][] visited = new boolean[N][N];
+        Queue<int[]> queue = new LinkedList<>();
+        queue.add(new int[]{sx, sy, 0});
+        visited[sx][sy] = true;
+
+        while (!queue.isEmpty()) {
+            int[] cur = queue.poll();
+            if (cur[0] == tx && cur[1] == ty) return cur[2];
+
+            for (int[] move : MOVES) {
+                int nx = cur[0] + move[0], ny = cur[1] + move[1];
+                if (nx >= 0 && ny >= 0 && nx < N && ny < N && !visited[nx][ny]) {
+                    queue.add(new int[]{nx, ny, cur[2] + 1});
+                    visited[nx][ny] = true;
+                }
+            }
+        }
+        return -1;
+    }
+}
+// 8×8 board, (0,0) → (7,7)  →  Output: 6 moves
+```
+
+---
+
+### 32. Max Stack — O(1) getMax
+
+**Problem:** Stack that supports push, pop, peekMax (O(1)), and popMax.  
+**Complexity:** push/pop/peekMax O(1) | popMax O(n)
+
+```java
+package com.practise;
+
+import java.util.Stack;
+
+public class MaxStack {
+    private Stack<Integer> stack;
+    private Stack<Integer> maxStack; // tracks running max at each level
+
+    public MaxStack() {
+        stack = new Stack<>();
+        maxStack = new Stack<>();
+    }
+
+    public void push(int x) {
+        stack.push(x);
+        maxStack.push(maxStack.isEmpty() ? x : Math.max(x, maxStack.peek()));
+    }
+
+    public int pop() {
+        maxStack.pop();
+        return stack.pop();
+    }
+
+    public int peekMax() { return maxStack.peek(); }
+
+    public int popMax() {
+        int max = maxStack.peek();
+        Stack<Integer> temp = new Stack<>();
+
+        while (stack.peek() != max) {
+            temp.push(stack.pop());
+            maxStack.pop();
+        }
+        stack.pop();
+        maxStack.pop();
+
+        while (!temp.isEmpty()) push(temp.pop());
+        return max;
+    }
+}
+```
+
+---
+
+### 33. Calendar Booking — Conflict Detection
+
+**Problem:** Book time slots without overlaps using a TreeMap for O(log n) lookups.  
+**Complexity:** O(log n) per booking | O(n) space
+
+```java
+package com.practise;
+
+import java.util.TreeMap;
+
+public class CalendarBooking {
+    private TreeMap<Integer, Integer> bookings = new TreeMap<>();
+
+    public boolean bookStage(int start, int end) {
+        if (start >= end) return false;
+
+        Integer prev = bookings.floorKey(start);
+        if (prev != null && bookings.get(prev) > start) return false;
+
+        Integer next = bookings.ceilingKey(start);
+        if (next != null && next < end) return false;
+
+        bookings.put(start, end);
+        return true;
+    }
+}
+// bookStage(10,20)→true, bookStage(15,25)→false, bookStage(20,30)→true
+```
+
+---
+
+### 34. Group Anagrams
+
+**Problem:** Group words that are anagrams of each other.  
+**Complexity:** O(n × k log k) time | O(n) space  (k = avg word length)
+
+```java
+package com.practise;
+
+import java.util.*;
+
+public class GroupAnagrams {
+
+    public static List<List<String>> groupAnagrams(String[] words) {
+        Map<String, List<String>> map = new HashMap<>();
+
+        for (String word : words) {
+            char[] chars = word.toCharArray();
+            Arrays.sort(chars);
+            String key = new String(chars);
+            map.computeIfAbsent(key, k -> new ArrayList<>()).add(word);
+        }
+        return new ArrayList<>(map.values());
+    }
+}
+// Input: {"bat","tab","cat","act","tac","dog","god"}
+// Output: [[bat,tab],[cat,act,tac],[dog,god]]
+```
+
+---
+
+### 35. Stock Price — Min/Max Heap
+
+**Problem:** Track stock prices by timestamp; support `update`, `current` (latest), `maximum`, `minimum` in O(log n).  
+**Complexity:** O(log n) update | O(log n) max/min (lazy deletion) | O(n) space
+
+```java
+package com.practise;
+
+import java.util.*;
+
+class StockPrice {
+    private Map<Integer, Integer> timestampToPrice = new HashMap<>();
+    private PriorityQueue<int[]> maxHeap = new PriorityQueue<>((a, b) -> b[0] - a[0]);
+    private PriorityQueue<int[]> minHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+    private int latestTimestamp = 0;
+
+    public void update(int timestamp, int price) {
+        timestampToPrice.put(timestamp, price);
+        if (timestamp > latestTimestamp) latestTimestamp = timestamp;
+        maxHeap.offer(new int[]{price, timestamp});
+        minHeap.offer(new int[]{price, timestamp});
+    }
+
+    public int current() { return timestampToPrice.get(latestTimestamp); }
+
+    public int maximum() {
+        while (timestampToPrice.get(maxHeap.peek()[1]) != maxHeap.peek()[0]) maxHeap.poll();
+        return maxHeap.peek()[0];
+    }
+
+    public int minimum() {
+        while (timestampToPrice.get(minHeap.peek()[1]) != minHeap.peek()[0]) minHeap.poll();
+        return minHeap.peek()[0];
+    }
+}
+```
+
+---
+
+### 36. Stock Data Structure — TreeMap
+
+**Problem:** Same as Stock Price but uses a TreeMap for O(log n) insert/delete/max.  
+**Complexity:** O(log n) all operations | O(n) space
+
+```java
+package com.practise;
+
+import java.util.*;
+
+class StockDataStructure {
+    private TreeMap<Integer, Integer> stockData = new TreeMap<>();    // timestamp → price
+    private TreeMap<Integer, Integer> priceCount = new TreeMap<>();   // price → frequency
+
+    public void insertOrUpdate(int timestamp, int price) {
+        if (stockData.containsKey(timestamp)) removePrice(stockData.get(timestamp));
+        stockData.put(timestamp, price);
+        priceCount.merge(price, 1, Integer::sum);
+    }
+
+    public int getRecentStockPrice()  { return stockData.get(stockData.lastKey()); }
+    public int getMaxStockPrice()     { return priceCount.lastKey(); }
+
+    public void deleteStock(int timestamp) {
+        if (!stockData.containsKey(timestamp)) return;
+        removePrice(stockData.remove(timestamp));
+    }
+
+    private void removePrice(int price) {
+        if (priceCount.get(price) == 1) priceCount.remove(price);
+        else priceCount.put(price, priceCount.get(price) - 1);
+    }
+}
+```
+
+---
+
+### 37. Large File Sort — External Sort (Simple)
+
+**Problem:** Sort a file too large to fit in memory using chunk-sort + k-way merge with a PriorityQueue.  
+**Complexity:** O(n log n) | O(chunk_size + k) memory
+
+```java
+// Strategy:
+// 1. Read CHUNK_SIZE numbers at a time, sort in memory, write to temp file
+// 2. k-way merge all temp files using a min-heap (Node holds value + BufferedReader)
+// See com.practise.LargeFileSort for full implementation
+
+private static class Node {
+    int value;
+    BufferedReader reader;
+}
+// Heap always pops the smallest value across all chunk files
+// Reads the next line from the same file to refill the heap
+```
+
+---
+
+### 38. Large File Sorter — External Sort (Parallel)
+
+**Problem:** Same as above but chunks are sorted concurrently using `CompletableFuture` and a fixed thread pool.  
+**Complexity:** O(n log n / p) where p = available processors | O(chunk_size × p) memory
+
+```java
+// Key difference from LargeFileSort:
+// - Uses FileChannel + ByteBuffer for fast I/O
+// - Each chunk sort is submitted as CompletableFuture.supplyAsync(...)
+// - CompletableFuture.allOf(...).join() waits for all chunks before merging
+// See com.practise.LargeFileSorter for full implementation
+ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+```
+
+---
+
+### 39. Monster Game — Simulation
+
+**Problem:** Each turn deal `attackPower` damage to all monsters still alive. Count total turns.  
+**Complexity:** O(turns × monsters) time | O(1) space
+
+```java
+package com.practise;
+
+public class MonsterGame {
+
+    public static int countTurnsToDefeatAll(int[] monsters, int attackPower) {
+        int turns = 0;
+        boolean allDead = false;
+
+        while (!allDead) {
+            allDead = true;
+            for (int i = 0; i < monsters.length; i++) {
+                if (monsters[i] > 0) {
+                    monsters[i] -= attackPower;
+                    allDead = false;
+                }
+            }
+            if (!allDead) turns++;
+        }
+        return turns;
+    }
+}
+// Input: monsters={10,20,15}, attackPower=5  →  Output: 4 turns (ceil(20/5))
+```
+
+---
+
+### 40. Vendor Placement — Binary Search on Answer
+
+**Problem:** Same pattern as Aggressive Cows — place K shops in available spaces so the minimum distance between any two is at least `distance`.  
+**Complexity:** O(n log n) time | O(1) space
+
+```java
+package com.practise;
+
+import java.util.Arrays;
+
+public class VendorPlacement {
+
+    public static boolean allocateSpace(int[] spaces, int shopCount, int distance) {
+        Arrays.sort(spaces);
+        int lastPosition = spaces[0], cnt = 1;
+
+        for (int i = 1; i < spaces.length; i++) {
+            if (spaces[i] - lastPosition >= distance) {
+                cnt++;
+                lastPosition = spaces[i];
+                if (cnt == shopCount) return true;
+            }
+        }
+        return false;
+    }
+}
+// Input: spaces={1,2,8,4,9}, shopCount=3, distance=3  →  Output: true
+```
+
+---
+
+### 41. Email Regex Validator
+
+**Problem:** Validate email addresses using a compiled regex pattern.
+
+```java
+package com.practise;
+
+import java.util.regex.*;
+
+public class RegexExpr {
+
+    private static final String EMAIL_REGEX =
+        "^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@" +
+        "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$";
+
+    private static final Pattern pattern = Pattern.compile(EMAIL_REGEX);
+
+    public static boolean isValidEmail(String email) {
+        return pattern.matcher(email).matches();
+    }
+}
+// "example@example.com" → true
+// "invalid.email.com"   → false
+// "invalid@.com"        → false
+```
+
+**Regex breakdown:**
+| Part | Meaning |
+|---|---|
+| `^[_A-Za-z0-9-\\+]+` | Local part: letters, digits, `_`, `-`, `+` |
+| `(\\.[_A-Za-z0-9-]+)*` | Optional dotted sub-parts in local |
+| `@` | Separator |
+| `[A-Za-z0-9-]+` | Domain name |
+| `(\\.[A-Za-z0-9]+)*` | Optional subdomains |
+| `(\\.[A-Za-z]{2,})$` | TLD (at least 2 letters) |
+
+---
+
 ## QUICK COMPLEXITY REFERENCE
 
 | Algorithm | Time (avg) | Time (worst) | Space | Notes |
@@ -914,3 +1491,18 @@ public class AnagramProblem {
 | Quickselect | O(n) | O(n²) | O(1) | Randomized pivot |
 | Bin Packing FFD | O(n²) | O(n²) | O(n) | Approx ≤ 11/9·OPT |
 | Anagram Detection | O(n log n) | O(n log n) | O(n) | Sort-based |
+| Aggressive Cows / Vendor Placement | O(n log n) | O(n log n) | O(1) | Binary search on answer |
+| Array Reverse | O(n) | O(n) | O(1) | Two pointers |
+| Trapping Rain Water (two-pointer) | O(n) | O(n) | O(1) | |
+| Trapping Rain Water (prefix/suffix) | O(n) | O(n) | O(n) | |
+| Rotting Oranges | O(V+E) | O(V+E) | O(V) | Multi-source BFS |
+| Knight Moves | O(N²) | O(N²) | O(N²) | BFS on grid |
+| Max Stack peekMax | O(1) | O(1) | O(n) | Auxiliary max-stack |
+| Max Stack popMax | O(n) | O(n) | O(n) | |
+| Calendar Booking | O(log n) | O(log n) | O(n) | TreeMap floor/ceiling |
+| Group Anagrams | O(n·k log k) | O(n·k log k) | O(n) | Sort key |
+| Stock Price (heap) | O(log n) | O(log n) | O(n) | Lazy deletion |
+| Stock Data Structure (TreeMap) | O(log n) | O(log n) | O(n) | |
+| Large File Sort | O(n log n) | O(n log n) | O(chunk) | External sort |
+| Large File Sorter (parallel) | O(n log n / p) | O(n log n) | O(chunk×p) | CompletableFuture |
+| Monster Game | O(turns×m) | O(turns×m) | O(1) | Simulation |
